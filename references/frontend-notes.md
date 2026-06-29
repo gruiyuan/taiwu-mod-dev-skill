@@ -12,7 +12,7 @@ using UnityEngine;
 
 namespace MyMod.Frontend;
 
-[PluginConfig("MyMod.Unique.Frontend", "作者名", "1.0.0")]
+[PluginConfig("MyMod.Unique.Frontend", "<用户确认的作者名>", "1.0.0")]
 public sealed class FrontendPlugin : TaiwuRemakePlugin
 {
     public override void Initialize()

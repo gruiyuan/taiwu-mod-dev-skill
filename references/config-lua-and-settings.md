@@ -10,7 +10,7 @@ return {
   Title           = "我的 Mod",                  -- 显示名
   Version         = "1.0.0",                    -- mod 版本
   GameVersion     = "1.0.44",                   -- 目标游戏版本，尽量对上当前游戏
-  Author          = "作者名",
+  Author          = "<用户确认的作者名>",   -- 怎么定作者见下方「确定 Author（作者名）」
   Description     = [=[说明，支持 Steam BBCode：[h1][h2][b][list][*][code][url]]=],
   Cover           = "Cover.png",                -- 可选，封面图文件名（相对 mod 根）
   WorkshopCover   = "Cover.png",                -- 可选，创意工坊封面
@@ -193,9 +193,72 @@ $LogPath = "$env:USERPROFILE\AppData\LocalLow\Conchship\The Scroll of Taiwu\Play
 grep "Game version = " "$LogPath" 2>/dev/null | tail -1
 ```
 
-## 常见坑
+## 确定 Author（作者名）——不要自己编
+
+> ⚠️ **不要把 Author 留成占位符、也不要自己编一个（如 `taiwu-mod-dev`、`AI`、`Author`）。** 那不是 mod 开发者想要的名字。`Author` 必须来自用户：**先自动探测 Steam 昵称作为候选，再让用户确认或输入**。
+
+### 第一步：自动探测最近登录的 Steam 昵称
+
+Steam 把本机登录过的账号存在 `config\loginusers.vdf`，每个账号的 `PersonaName` 就是昵称，`MostRecent="1"` 标记最近登录的那个。
+
+> ⚠️ **中文乱码坑（重要）**：`loginusers.vdf` 是**无 BOM 的 UTF-8** 文件，但中文 Windows 上 PowerShell 5.1（系统自带 `powershell.exe`）的 `Get-Content` 默认按系统代码页（GB2312/936）解码，会把中文昵称读成乱码（正确昵称→乱码）。脚本本身若含中文字面量也会被同样误读。**必须三条全做到**：① 用 `[System.IO.File]::ReadAllText($vdf, [System.Text.Encoding]::UTF8)` 强制 UTF-8 读文件（不靠 BOM 探测）；② **脚本零中文字面量**（昵称只从文件来）；③ 设 `[Console]::OutputEncoding = UTF8` 保证输出也正确。下面是验证过的**纯 ASCII 脚本**：
+
+```powershell
+# Pure-ASCII script: nickname comes only from the UTF-8 vdf file, never mis-decoded.
+$ErrorActionPreference = 'Stop'
+try {
+    $steamPath = (Get-ItemProperty 'HKCU:\Software\Valve\Steam').SteamPath
+    if (-not $steamPath) { Write-Output 'STEAM_NICKNAME_NOT_FOUND'; exit }
+    $vdf = Join-Path $steamPath 'config\loginusers.vdf'
+    if (-not (Test-Path -LiteralPath $vdf)) { Write-Output 'STEAM_NICKNAME_NOT_FOUND'; exit }
+} catch {
+    Write-Output 'STEAM_NICKNAME_NOT_FOUND'; exit
+}
+
+$content = [System.IO.File]::ReadAllText($vdf, [System.Text.Encoding]::UTF8)
+$users = [regex]::Matches($content, '(?ms)"(\d+)"\s*\{(.*?)\}')
+if ($users.Count -eq 0) { Write-Output 'STEAM_NICKNAME_NOT_FOUND'; exit }
+
+$candidates = foreach ($u in $users) {
+    $body = $u.Groups[2].Value
+    $persona = if ($body -match '"PersonaName"\s*"([^"]*)"') { $matches[1] } else { '' }
+    $mostRec = if ($body -match '"MostRecent"\s*"(\d+)"')    { $matches[1] } else { '0' }
+    $ts      = if ($body -match '"Timestamp"\s*"(\d+)"')     { [long]$matches[1] } else { 0 }
+    [pscustomobject]@{ PersonaName = $persona; MostRecent = $mostRec; Timestamp = $ts }
+}
+# Prefer MostRecent=1; otherwise fall back to the largest Timestamp.
+$chosen = $candidates | Where-Object { $_.MostRecent -eq '1' } | Sort-Object Timestamp -Descending | Select-Object -First 1
+if (-not $chosen) { $chosen = $candidates | Sort-Object Timestamp -Descending | Select-Object -First 1 }
+if ($chosen -and $chosen.PersonaName) {
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    Write-Output ("PERSONA:" + $chosen.PersonaName)
+} else {
+    Write-Output 'STEAM_NICKNAME_NOT_FOUND'
+}
+```
+
+- **成功**（输出 `PERSONA:<昵称>`）→ 把这个昵称作为候选，进入「第二步：确认或输入」。
+- **失败**（输出 `STEAM_NICKNAME_NOT_FOUND`：无 Steam、无 vdf、未登录过等）→ 跳过确认，直接进入「第二步：让用户输入」。
+
+> 该脚本只读本地 vdf，不联网、不调任何 Steam API，安全。`MostRecent` 是 Steam 自己维护的字段，比 `Timestamp` 更可靠；多账号同时有 `MostRecent=1` 时按 `Timestamp` 取最新。
+>
+> 执行方式：存成 `.ps1` 用 `powershell -NoProfile -ExecutionPolicy Bypass -File <脚本.ps1>` 运行。**不要**把含中文的命令直接内联进 bash/heredoc 传给 PS 5.1——那样中文字面量会先被外层 shell 按其编码处理，再被 PS 按 GB2312 读，双重错码。脚本存成纯 ASCII 文件最稳。
+
+### 第二步：用 AskUserQuestion 让用户定作者名
+
+- **探测成功时**：把探测到的昵称作为**推荐项（第一个）**，另给"输入自定义"和"留空"选项，让用户确认：
+  - 问题如「检测到你的 Steam 昵称是「<昵称>」，用作 mod 作者吗？」
+  - 选项 1：`<探测到的昵称>`（推荐）
+  - 选项 2：`输入自定义名字`（用户自填，如团队名/英文名）
+  - 选项 3：`留空（发布时游戏自动用 Steam 昵称补）`
+- **探测失败时**：直接问用户「mod 的作者名填什么？」，**不要给占位符默认值**，由用户输入。
+
+确定后把结果填进 `Config.Lua` 的 `Author` 字段，以及 `[PluginConfig]` 的第二个参数（两处作者名应一致）。
+
+
 
 - `Config.Lua` 大小写错（写成 `config.lua`）→ mod 不显示/不加载。Linux/Steam 大小写敏感。
 - `Key` 在 C# 读和 Lua 写里不一致 → `GetSetting` 返回 false，用默认值。
 - Slider 想存小数 → 不支持，改用整数百分比。
 - Description 里的引号：用 `[=[]=]` 长字符串语法包住，避免内嵌 `"` 冲突。
+- `Author` 留占位符或被自己编造（如 `taiwu-mod-dev`）→ 工坊页面显示错误作者名。**必须**按「确定 Author」流程从 Steam 昵称探测 + 用户确认得来。

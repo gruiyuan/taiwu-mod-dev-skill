@@ -19,7 +19,7 @@
 | 字段 | 说明 | 交互方式 |
 |---|---|---|
 | `Title` | mod 名称（工坊显示名）。**不能为空、不能与本地其他 mod 重名**（游戏校验，重名会拒绝保存）。 | 询问用户 |
-| `Author` | 作者名。留空时游戏会用 Steam 昵称补上，但最好明确填。 | 询问用户 |
+| `Author` | 作者名。**不要自己编、不要留占位符**（如 `taiwu-mod-dev` 不是开发者想要的名字）。先自动探测最近登录的 Steam 昵称（读 `$(HKCU:\Software\Valve\Steam SteamPath)\config\loginusers.vdf` 的 `PersonaName`，优先 `MostRecent=1`），探测到→AskUserQuestion 让用户确认/自定义/留空；探测失败→直接让用户输入。完整脚本见 config-lua-and-settings.md「确定 Author（作者名）」。 | 探测 + AskUserQuestion |
 | `Version` | mod 版本（如 `1.0.0`）。游戏会经 `VersionStringToUlong` 规范化，`1.0` 和 `1.0.0.0` 等价。**更新时版本号必须变**（否则 Steam 认为没更新）。 | 询问用户 |
 | `GameVersion` | 目标游戏版本，影响兼容性检查（见 config-lua-and-settings.md）。 | 从 `level0` 离线提取（不需要启动游戏），方法见 config-lua-and-settings.md「怎么查当前游戏版本」；失败则请用户启动一次游戏后从 Player.log 读 |
 
