@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>TaiwuKbBuilder</RootNamespace>
+    <AssemblyName>build-knowledge-base</AssemblyName>
+    <!-- 自包含发布产物不进 git；本工程只是源码，由 dotnet run 现场编译运行 -->
+    <PublishSingleFile>false</PublishSingleFile>
+    <!-- 不产生本地化资源、不警告未使用字段 -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <!-- 纯 BCL，零 NuGet 依赖。System.Text.Json 在 net8.0 内置，支持跳过 JSON 注释。 -->
+
+</Project>

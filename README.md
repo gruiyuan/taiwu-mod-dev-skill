@@ -17,6 +17,8 @@
 到编写插件入口、用 HarmonyLib 打补丁、定义 Config.Lua 设置项、前后端 RPC 通信，
 再到编译部署、看日志调试、发布到创意工坊及后续版本维护——**完整链路，一个 skill 搞定**。
 
+还内置**游戏机制知识库**：把游戏内《太吾百晓册》（官方百科）转成 markdown，让 AI 先理解游戏机制/数值再结合反编译源码定位实现，patch 写得更准。
+
 
 [安装](#安装) · [这个 skill 能做什么](#这个-skill-能做什么) · [工作流](#工作流) · [设计要点](#设计要点)
 
@@ -78,11 +80,16 @@ git clone https://github.com/gruiyuan/taiwu-mod-dev-skill.git
 ```
 taiwu-mod-dev/
 ├── SKILL.md
+├── scripts/
+│   ├── dotnet-build-kb/            # 生成《太吾百晓册》机制知识库的 .NET 工程（dotnet run）
+│   └── config-extractor/           # 从游戏 dll 离线提取全部配置数值的 .NET 工程（Mono.Cecil）
 └── references/
     ├── backend-harmony.md
     ├── config-lua-and-settings.md
     ├── frontend-backend-rpc.md
     ├── frontend-notes.md
+    ├── game-config.md             # 游戏配置数值（config-extractor）的构建与使用
+    ├── game-knowledge-base.md     # 游戏机制知识库（百晓册）的构建与使用
     ├── project-setup.md
     └── publishing.md
 ```
@@ -100,13 +107,14 @@ taiwu-mod-dev/
 - 「怎么更新已发布的 mod」
 - 「游戏更新了我的 mod 还能用吗」
 - 「帮我做个前后端通信的 mod」
+- 「这个游戏机制是怎么设计的？某项数值是多少？」
 
 ## 工作流
 
 skill 把 mod 开发组织成四个阶段，每次会话按需推进：
 
 1. **前置检查** — .NET 8+ 环境、ilspycmd 版本匹配、从注册表定位游戏安装目录。
-2. **反编译就绪** — 按 Steam buildid 做版本一致性校验，按需反编译前端 `Assembly-CSharp.dll` / 后端 `GameData.dll` 到工作区。
+2. **反编译就绪** — 按 Steam buildid 做版本一致性校验，按需反编译前端 `Assembly-CSharp.dll` / 后端 `GameData.dll` 到工作区。（可选/推荐：同步生成《太吾百晓册》机制知识库。）
 3. **开发** — 插件入口（`TaiwuRemakePlugin`）、Harmony patch、Config.Lua 设置项、前后端 RPC，编译部署看日志。
 4. **发布与维护** — 完善 Config.Lua（交互收集作者/版本等信息）、自检、游戏内上传创意工坊，以及版本更新、适配游戏新版本、回滚。
 

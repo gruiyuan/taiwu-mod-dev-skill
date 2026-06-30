@@ -7,3 +7,17 @@ desktop.ini
 .vscode/
 .idea/
 *.swp
+
+# 本地生成的产物（按当前游戏 buildid 生成，体积大、可重建，不随仓库提交）
+# - decompiled/   反编译源码（ilspycmd 产物，见 SKILL.md 阶段二）
+# - knowledge-base/  百晓册知识库（scripts/dotnet-build-kb 产物，见 references/game-knowledge-base.md）
+# - config/  游戏配置数值（config-extractor 产物，见 references/game-config.md）
+decompiled/
+knowledge-base/
+config/
+
+# .NET 工程的编译产物（dotnet run 现场生成，不提交）
+scripts/dotnet-build-kb/bin/
+scripts/dotnet-build-kb/obj/
+scripts/config-extractor/bin/
+scripts/config-extractor/obj/
