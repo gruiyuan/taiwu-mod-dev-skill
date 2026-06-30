@@ -8,6 +8,8 @@ Release notes are generated from this file. Keep changelog entries in English.
 
 ## Unreleased
 
+## 0.2.0
+
 ### Added
 
 * The skill can now ground itself in the game's own descriptions of how things work: it ships a builder that turns the in-game encyclopedia ("百晓册") into a queryable markdown knowledge base, so the agent understands game mechanics before writing patches rather than guessing from code alone.
