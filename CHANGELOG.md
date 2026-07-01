@@ -8,6 +8,23 @@ Release notes are generated from this file. Keep changelog entries in English.
 
 ## Unreleased
 
+## 0.2.1
+
+### Changed
+
+* Restructured the repository so the actual skill now lives under `skills/taiwu-mod-dev/` instead of the repository root.
+* Updated the project layout to better match the expected structure used by `npx skills add`.
+
+### Fixed
+
+* Fixed an installation issue where `npx skills add gruiyuan/taiwu-mod-dev-skill` could install only `SKILL.md` while omitting required supporting directories such as `references/` and `scripts/`.
+* Ensured the skill's supporting references and scripts are preserved during installation.
+
+### Notes
+
+* This release does not change the skill's behavior or Taiwu mod-development capabilities.
+* Users who installed an earlier broken layout should reinstall the skill after upgrading.
+
 ## 0.2.0
 
 ### Added
